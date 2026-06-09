@@ -32,6 +32,37 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## Supabase Backend
+
+This project is ready to use Supabase as the hosted backend.
+
+1. Create a Supabase project.
+2. Copy `.env.example` to `.env`.
+3. In Supabase, open **Project Settings > Database** and copy:
+   - pooled connection string into `DATABASE_URL`
+   - direct connection string into `DIRECT_URL`
+4. In Supabase, open **Project Settings > API** and copy:
+   - Project URL into `NEXT_PUBLIC_SUPABASE_URL`
+   - anon public key into `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - service role key into `SUPABASE_SERVICE_ROLE_KEY`
+5. Run Prisma migrations against Supabase:
+
+```bash
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+6. Run `supabase/rls.sql` in the Supabase SQL editor to enable row level security for direct Supabase table access.
+7. Run `supabase/storage.sql` in the Supabase SQL editor to create private Storage buckets for vendor documents, PR attachments, receipts, invoices and POs.
+
+The API routes use Prisma for database writes and Supabase Auth for bearer-token user lookup. Send authenticated API requests with:
+
+```http
+Authorization: Bearer <supabase-access-token>
+```
+
+The endpoint `GET /api/auth/me` confirms the active Supabase-authenticated portal user and role.
+
 ## Docker
 
 ```bash
@@ -68,7 +99,8 @@ For demo RBAC, pass `x-user-email` and optionally `x-user-role` headers. Replace
 ## Production Notes
 
 - Add S3/GCS storage for documents and invoice PDFs.
+- Or use Supabase Storage buckets for vendor documents, PR attachments, receipt proofs and invoice PDFs.
 - Add background jobs for recurring bill generation and 7-day due notifications.
 - Add email provider integration in notification triggers.
 - Add database indexes for business-unit scale once usage patterns are known.
-- Put the app behind SSO and replace header demo auth with signed sessions.
+- Put the app behind SSO by connecting Supabase Auth to the organization's identity provider.
