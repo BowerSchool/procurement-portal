@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { BarChart3, Building2, ClipboardCheck, FileBarChart, FileText, LayoutDashboard, Receipt, Repeat, Settings, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
+import { useState } from "react";
+import { BarChart3, Building2, ClipboardCheck, FileBarChart, FileText, LayoutDashboard, Moon, Receipt, Repeat, Settings, ShieldCheck, Sun, Truck, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navItems: Array<{ label: string; href: string; Icon: LucideIcon }> = [
@@ -16,7 +19,34 @@ const navItems: Array<{ label: string; href: string; Icon: LucideIcon }> = [
   { label: "Settings", href: "/settings", Icon: Settings }
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+type AppShellProps = {
+  children: React.ReactNode;
+  darkMode?: boolean;
+  onToggleTheme?: () => void;
+  onNewPurchaseRequest?: () => void;
+};
+
+export function AppShell({ children, darkMode = false, onToggleTheme, onNewPurchaseRequest }: AppShellProps) {
+  const [fallbackDarkMode, setFallbackDarkMode] = useState(false);
+  const activeDarkMode = onToggleTheme ? darkMode : fallbackDarkMode;
+  const toggleTheme = () => {
+    if (onToggleTheme) {
+      onToggleTheme();
+      return;
+    }
+    setFallbackDarkMode((current) => {
+      document.documentElement.classList.toggle("dark", !current);
+      return !current;
+    });
+  };
+  const startPurchaseRequest = () => {
+    if (onNewPurchaseRequest) {
+      onNewPurchaseRequest();
+      return;
+    }
+    window.location.href = "/#purchase-requests";
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 hidden w-72 border-r bg-card p-4 lg:block">
@@ -48,8 +78,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <h1 className="text-xl font-bold md:text-2xl">Procurement & Vendor Payables Management Portal</h1>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline">Light/Dark Mode</Button>
-              <Button>New Purchase Request</Button>
+              <Button variant="outline" onClick={toggleTheme}>
+                {activeDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {activeDarkMode ? "Light Mode" : "Dark Mode"}
+              </Button>
+              <Button onClick={startPurchaseRequest}>New Purchase Request</Button>
             </div>
           </div>
         </header>
