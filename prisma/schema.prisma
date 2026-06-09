@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  REPORTING_MANAGER
+  FINANCE
+  FINANCE_HEAD
+  FOUNDER_CEO
+  ADMIN
+}
+
+enum VendorType {
+  MARKETING
+  FACULTY
+  CONSULTANT
+  TRAVEL
+  TECHNOLOGY
+  INFRASTRUCTURE
+  EVENTS
+  OTHER
+}
+
+enum VendorStatus {
+  ACTIVE
+  BLOCKED
+  UNDER_REVIEW
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum PurchaseRequestStatus {
+  DRAFT
+  SUBMITTED
+  MANAGER_APPROVED
+  FINANCE_APPROVED
+  REJECTED
+  PO_CREATED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SENT_BACK
+  HOLD
+}
+
+enum ApprovalLevel {
+  REPORTING_MANAGER
+  FINANCE
+  FINANCE_HEAD
+  FOUNDER_CEO
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  APPROVED
+  SENT
+  ACCEPTED
+  CLOSED
+}
+
+enum ReceiptStatus {
+  PARTIAL
+  COMPLETE
+}
+
+enum BillStatus {
+  SUBMITTED
+  PENDING_APPROVAL
+  APPROVED
+  SCHEDULED
+  PAID
+  ON_HOLD
+}
+
+enum RecurringFrequency {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum DepartmentName {
+  GROWTH
+  OPERATIONS
+  STUDENT_EXPERIENCE
+  ADMISSIONS
+  HR
+  FINANCE
+  LEADERSHIP
+}
+
+enum NotificationType {
+  PR_SUBMITTED
+  PR_APPROVED
+  PR_REJECTED
+  PO_GENERATED
+  INVOICE_SUBMITTED
+  PAYMENT_DUE
+  PAYMENT_OVERDUE
+  BUDGET_THRESHOLD_EXCEEDED
+  VENDOR_DOCUMENT_EXPIRING
+}
+
+model User {
+  id                  String             @id @default(cuid())
+  name                String
+  email               String             @unique
+  role                Role
+  department          Department?         @relation(fields: [departmentId], references: [id])
+  departmentId        String?
+  manager             User?              @relation("ManagerTeam", fields: [managerId], references: [id])
+  managerId           String?
+  team                User[]             @relation("ManagerTeam")
+  purchaseRequests    PurchaseRequest[]  @relation("Requester")
+  managedApprovals    ApprovalStep[]     @relation("Approver")
+  createdPurchaseOs   PurchaseOrder[]    @relation("POCreator")
+  receipts            PurchaseReceipt[]
+  notifications       Notification[]
+  auditTrails         AuditTrail[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}
+
+model Department {
+  id               String            @id @default(cuid())
+  name             DepartmentName    @unique
+  businessUnit     String            @default("Bower School of Entrepreneurship")
+  users            User[]
+  budgets          DepartmentBudget[]
+  purchaseRequests PurchaseRequest[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Vendor {
+  id                String          @id @default(cuid())
+  vendorCode        String          @unique
+  name              String
+  type              VendorType
+  gstNumber         String?
+  panNumber         String?
+  contactPerson     String
+  mobile            String
+  email             String
+  bankName          String
+  accountNumber     String
+  ifscCode          String
+  beneficiaryName   String
+  status            VendorStatus    @default(UNDER_REVIEW)
+  documents         VendorDocument[]
+  purchaseRequests  PurchaseRequest[]
+  purchaseOrders    PurchaseOrder[]
+  receipts          PurchaseReceipt[]
+  bills             VendorBill[]
+  recurringBills    RecurringBill[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model VendorDocument {
+  id          String    @id @default(cuid())
+  vendor      Vendor    @relation(fields: [vendorId], references: [id])
+  vendorId    String
+  type        String
+  fileUrl     String
+  expiresAt   DateTime?
+  uploadedBy  String
+  createdAt   DateTime  @default(now())
+}
+
+model DepartmentBudget {
+  id             String          @id @default(cuid())
+  department     Department      @relation(fields: [departmentId], references: [id])
+  departmentId   String
+  budgetHead     String
+  fiscalYear     Int
+  allocated      Decimal         @db.Decimal(14, 2)
+  committedSpend Decimal         @default(0) @db.Decimal(14, 2)
+  actualSpend    Decimal         @default(0) @db.Decimal(14, 2)
+  financeOverride Boolean        @default(false)
+  requests       PurchaseRequest[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([departmentId, budgetHead, fiscalYear])
+}
+
+model PurchaseRequest {
+  id                    String                  @id @default(cuid())
+  requestNumber         String                  @unique
+  department            Department              @relation(fields: [departmentId], references: [id])
+  departmentId          String
+  requester             User                    @relation("Requester", fields: [requesterId], references: [id])
+  requesterId           String
+  vendor                Vendor                  @relation(fields: [vendorId], references: [id])
+  vendorId              String
+  expenseCategory       String
+  budget                DepartmentBudget        @relation(fields: [budgetId], references: [id])
+  budgetId              String
+  description           String
+  businessJustification String
+  amount                Decimal                 @db.Decimal(14, 2)
+  gstAmount             Decimal                 @db.Decimal(14, 2)
+  totalAmount           Decimal                 @db.Decimal(14, 2)
+  requiredDate          DateTime
+  priority              Priority
+  status                PurchaseRequestStatus   @default(DRAFT)
+  attachments           RequestAttachment[]
+  approvals             ApprovalStep[]
+  purchaseOrder         PurchaseOrder?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+}
+
+model RequestAttachment {
+  id                String          @id @default(cuid())
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
+  purchaseRequestId String
+  type              String
+  fileUrl           String
+  createdAt         DateTime        @default(now())
+}
+
+model ApprovalStep {
+  id                String          @id @default(cuid())
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id])
+  purchaseRequestId String
+  level             ApprovalLevel
+  approver          User            @relation("Approver", fields: [approverId], references: [id])
+  approverId        String
+  sequence          Int
+  status            ApprovalStatus  @default(PENDING)
+  comments          String?
+  actedAt           DateTime?
+  createdAt         DateTime        @default(now())
+
+  @@unique([purchaseRequestId, sequence])
+}
+
+model PurchaseOrder {
+  id                String              @id @default(cuid())
+  poNumber          String              @unique
+  vendor            Vendor              @relation(fields: [vendorId], references: [id])
+  vendorId          String
+  purchaseRequest   PurchaseRequest     @relation(fields: [purchaseRequestId], references: [id])
+  purchaseRequestId String              @unique
+  amount            Decimal             @db.Decimal(14, 2)
+  gst               Decimal             @db.Decimal(14, 2)
+  total             Decimal             @db.Decimal(14, 2)
+  deliverables      String
+  startDate         DateTime
+  endDate           DateTime
+  paymentTerms      String
+  dueDate           DateTime
+  status            PurchaseOrderStatus @default(DRAFT)
+  pdfUrl            String?
+  sentAt            DateTime?
+  createdBy         User                @relation("POCreator", fields: [createdById], references: [id])
+  createdById       String
+  receipts          PurchaseReceipt[]
+  bills             VendorBill[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model PurchaseReceipt {
+  id                    String              @id @default(cuid())
+  purchaseOrder         PurchaseOrder       @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId       String
+  vendor                Vendor              @relation(fields: [vendorId], references: [id])
+  vendorId              String
+  receiptDate           DateTime
+  receivedBy            User                @relation(fields: [receivedById], references: [id])
+  receivedById          String
+  deliverablesReceived  String
+  supportingDocuments   String[]
+  status                ReceiptStatus
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+}
+
+model VendorBill {
+  id              String        @id @default(cuid())
+  invoiceNumber   String
+  invoiceDate     DateTime
+  vendor          Vendor        @relation(fields: [vendorId], references: [id])
+  vendorId        String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String
+  invoiceAmount   Decimal       @db.Decimal(14, 2)
+  gst             Decimal       @db.Decimal(14, 2)
+  totalAmount     Decimal       @db.Decimal(14, 2)
+  dueDate         DateTime
+  invoicePdfUrl   String
+  status          BillStatus    @default(SUBMITTED)
+  duplicateRisk   Boolean       @default(false)
+  exceedsPo       Boolean       @default(false)
+  missingGst      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([vendorId, invoiceNumber])
+}
+
+model RecurringBill {
+  id               String             @id @default(cuid())
+  vendor           Vendor             @relation(fields: [vendorId], references: [id])
+  vendorId         String
+  name             String
+  frequency        RecurringFrequency
+  amount           Decimal            @db.Decimal(14, 2)
+  gst              Decimal            @db.Decimal(14, 2)
+  nextDueDate      DateTime
+  autoGenerate     Boolean            @default(true)
+  notifyDaysBefore Int                @default(7)
+  active           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+}
+
+model AuditTrail {
+  id         String   @id @default(cuid())
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+  entityType String
+  entityId   String
+  action     String
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}

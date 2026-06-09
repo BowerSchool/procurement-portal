@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 168 18% 96%;
+    --foreground: 165 19% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 165 19% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 165 19% 11%;
+    --primary: 174 56% 27%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 160 13% 90%;
+    --secondary-foreground: 165 19% 11%;
+    --muted: 160 13% 91%;
+    --muted-foreground: 168 8% 43%;
+    --accent: 274 31% 46%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 50% 47%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 156 15% 83%;
+    --input: 156 15% 83%;
+    --ring: 174 56% 27%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 165 20% 8%;
+    --foreground: 160 18% 94%;
+    --card: 165 17% 12%;
+    --card-foreground: 160 18% 94%;
+    --popover: 165 17% 12%;
+    --popover-foreground: 160 18% 94%;
+    --primary: 172 47% 42%;
+    --primary-foreground: 165 20% 8%;
+    --secondary: 165 15% 17%;
+    --secondary-foreground: 160 18% 94%;
+    --muted: 165 15% 18%;
+    --muted-foreground: 162 10% 68%;
+    --accent: 274 33% 62%;
+    --accent-foreground: 165 20% 8%;
+    --destructive: 0 61% 53%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 165 13% 23%;
+    --input: 165 13% 23%;
+    --ring: 172 47% 42%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+}
