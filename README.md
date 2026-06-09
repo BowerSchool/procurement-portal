@@ -41,8 +41,9 @@ This project is ready to use Supabase as the hosted backend.
 3. In Supabase, open **Project Settings > Database** and copy:
    - pooled connection string into `DATABASE_URL`
    - direct connection string into `DIRECT_URL`
+   - URL-encode special characters in the password, for example `@` becomes `%40`
 4. In Supabase, open **Project Settings > API** and copy:
-   - Project URL into `NEXT_PUBLIC_SUPABASE_URL`
+   - Project URL into `NEXT_PUBLIC_SUPABASE_URL`, using the format `https://<project-ref>.supabase.co`
    - anon public key into `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - service role key into `SUPABASE_SERVICE_ROLE_KEY`
 5. Run Prisma migrations against Supabase:
